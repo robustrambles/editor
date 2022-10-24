@@ -1,6 +1,7 @@
-const { createAppAuth } = require("@octokit/auth-app");
+const { createOAuthAppAuth } = require("@octokit/auth-oauth-app");
 
-const auth = createAppAuth({
+const auth = createOAuthAppAuth({
+    clientType: 'oauth-app',
     clientId: process.env.GITHUB_CLIENT_ID,
     clientSecret: process.env.GITHUB_CLIENT_SECRET
 });
@@ -23,6 +24,6 @@ const redirect = (token) => {
 exports.handler = async function(event, context) {
     if (!('code' in event.queryStringParameters)) return redirect();
     const { code } = event.queryStringParameters;
-    const oauthAuthentication = await auth({ type: 'oauth', code });
+    const oauthAuthentication = await auth({ type: 'oauth-user', code });
     return redirect(oauthAuthentication.token);
 };

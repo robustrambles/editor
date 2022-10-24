@@ -3,6 +3,6 @@
     "serve": "npx simplehttpserver -p 8080 ."
   },
   "dependencies": {
-    "@octokit/auth-app": "^4.0.7"
+    "@octokit/auth-oauth-app": "^5.0.4"
   }
 }

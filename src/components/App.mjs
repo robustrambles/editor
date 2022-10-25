@@ -22,7 +22,7 @@ export default {
     </div>`,
     computed: {
         hasAuth() {
-            return false;
+            return true;
         },
         activeRoute() {
             return activeRoute.value;

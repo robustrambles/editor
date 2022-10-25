@@ -1,8 +1,9 @@
-import HelloWorld from "../pages/HelloWorld.mjs"
+import CreateWalk from "../pages/CreateWalk.mjs";
+import WalkList from "../pages/WalkList.mjs"
 import { activeRoute, activeHash, getRoute } from "../services/routes.mjs"
 
 export default {
-    data: () => ({ HelloWorld: getRoute(HelloWorld) }),
+    data: () => ({ WalkList: getRoute(WalkList), CreateWalk: getRoute(CreateWalk) }),
     computed: {
         activeRoute() {
             return activeRoute.value;
@@ -24,10 +25,17 @@ export default {
           <div class="navbar navbar-light">
             <div class="container-xl">
               <ul class="navbar-nav">
-                <li class="nav-item" :class="{ active: activeHash === HelloWorld }">
-                  <a class="nav-link" :href="HelloWorld">
+                <li class="nav-item" :class="{ active: activeHash === WalkList }">
+                  <a class="nav-link" :href="WalkList">
                     <span class="nav-link-title">
-                      Hello World
+                      Walks
+                    </span>
+                  </a>
+                </li>
+                <li class="nav-item" :class="{ active: activeHash === CreateWalk }">
+                  <a class="nav-link" :href="CreateWalk">
+                    <span class="nav-link-title">
+                      Add Walk
                     </span>
                   </a>
                 </li>

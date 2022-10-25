@@ -1,8 +1,10 @@
 import { ref } from "../deps/vue.mjs";
-import HelloWorld from "../pages/HelloWorld.mjs";
+import CreateWalk from "../pages/CreateWalk.mjs";
+import WalkList from "../pages/WalkList.mjs";
 
 export const routes = {
-    '/': HelloWorld,
+    '/': WalkList,
+    '/create': CreateWalk,
 }
 
 export const routeMap = new WeakMap();

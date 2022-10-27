@@ -1,3 +1,4 @@
+import Preview from "../components/Preview.mjs";
 import {css} from "../deps/goober.mjs";
 import mammoth from "../deps/mammoth.mjs";
 import { reactive } from "../deps/vue.mjs";
@@ -41,9 +42,10 @@ const grabWalkData = async (arrayBuffer) => {
     console.log(title, subtitleArr, details, content);
 }
 
-const walk = reactive({ title: '', slug: '', subtitle: '', details: [{ id: Date.now(), name: '', value: '' }], portraitMap: false, content: '' });
+const walk = reactive({ title: '', subtitle: '', details: [{ id: Date.now(), name: '', value: '' }], portraitMap: false, content: '' });
 
 export default {
+    components: { Preview },
     data: () => ({ walk, dragover: false }),
     template: `
         <div class="container-xl">
@@ -68,6 +70,22 @@ export default {
                             <div class="card-body" :class="{ dragover }">
                                 <div class="row">
                                     <div class="col-12">
+                                        <div class="mb-3">
+                                            <label class="form-label">Title</label>
+                                            <div class="row g-2 mb-3">
+                                                <div class="col-4">
+                                                    <input type="text" class="form-control" placeholder="Title" v-model="walk.title" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Subtitle</label>
+                                            <div class="row g-2 mb-3" >
+                                                <div class="col-4">
+                                                    <input type="text" class="form-control" placeholder="Subtitle" v-model="walk.subtitle" />
+                                                </div>
+                                            </div>
+                                        </div>
                                         <div class="mb-3">
                                             <label class="form-label">Details</label>
                                             <div class="row g-2 mb-3" v-for="detail in walk.details" :key="detail.id">
@@ -100,7 +118,8 @@ export default {
                     </div>
                 </div>
             </div>
-        </div>`,
+        </div>
+        <Preview :title="walk.title" :subtitle="walk.subtitle" :details="walk.details" />`,
     methods: {
         removeDetail(id) {
             this.walk.details.splice(this.walk.details.findIndex(({ id: needleId }) => needleId === id), 1);

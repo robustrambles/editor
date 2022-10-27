@@ -13,12 +13,27 @@
         min-height: 100vh;
         font-family: serif;
       }
+
+      .app-wrapper {
+        display: flex;
+      }
+
+      #root {
+        width: 100%;
+      }
+      
+      #teleport-root > * {
+          min-width: 50vw;
+      }
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css">
     <script src="https://unpkg.com/chart.js@3.9.1" type="text/javascript"></script>
   </head>
   <body>
-    <div id="root"></div>
+    <div class="app-wrapper">
+      <div id="root"></div>
+      <div id="teleport-root"></div>
+    </div>
     <script src="index.mjs" type="module"></script>
   </body>
 </html>

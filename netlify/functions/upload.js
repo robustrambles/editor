@@ -16,8 +16,8 @@ const parseCookie = (/** @type {string} */ str) =>
 
 exports.handler = async function(event, context) {
     const { details, slug, title, subtitle, content } = JSON.parse(event.body);
-    // const cookies = parseCookie(event.headers.cookie);
-    // const token = cookies['__Host-github-token'];
+    const cookies = parseCookie(event.headers.cookie);
+    const token = cookies['__Host-github-token'];
     // const client = new Octokit({ auth: token });
     const renderer = new MobiledocDOMRenderer({
         dom: new SimpleDOM.Document()
@@ -40,6 +40,7 @@ exports.handler = async function(event, context) {
             title,
             subtitle,
             details: renderedDetails,
+            token,
             // portraitMap: false
         })
     };

@@ -15,14 +15,14 @@ const parseCookie = (/** @type {string} */ str) =>
 
 
 exports.handler = async function(event, context) {
-    const { details, slug, title, subtitle } = JSON.parse(event.body);
+    const { details, slug, title, subtitle, content } = JSON.parse(event.body);
     // const cookies = parseCookie(event.headers.cookie);
     // const token = cookies['__Host-github-token'];
     // const client = new Octokit({ auth: token });
     const renderer = new MobiledocDOMRenderer({
         dom: new SimpleDOM.Document()
     });
-    const rendered = renderer.render(mobiledoc);
+    const rendered = renderer.render(content);
     const serializer = new SimpleDOM.HTMLSerializer([]);
     const html = serializer.serializeChildren(rendered.result);
     const turndownService = new TurndownService();

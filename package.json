@@ -1,8 +1,13 @@
 {
   "scripts": {
-    "serve": "npx simplehttpserver -p 8080 ."
+    "serve": "npx simplehttpserver -p 8080 src"
   },
   "dependencies": {
-    "@octokit/auth-oauth-app": "^5.0.4"
+    "@octokit/auth-oauth-app": "^5.0.4",
+    "@octokit/core": "^4.1.0",
+    "gray-matter": "^4.0.3",
+    "mobiledoc-dom-renderer": "^0.7.2",
+    "simple-dom": "^1.4.0",
+    "turndown": "^7.1.1"
   }
 }

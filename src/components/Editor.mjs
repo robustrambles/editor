@@ -1,10 +1,7 @@
-import Preview from "../components/Preview.mjs";
-import RichTextEditor from "../components/RichTextEditor.mjs";
 import {css} from "../deps/goober.mjs";
 import mammoth from "../deps/mammoth.mjs";
-import { createMobiledocFromString, EMPTY_MOBILEDOC } from "../deps/mobiledoc.mjs";
 import { reactive } from "../deps/vue.mjs";
-import { walkSeries } from "../services/walks.mjs";
+import Preview from "./Preview.mjs";
 
 const styles = css`
     .card-body > * {
@@ -39,17 +36,17 @@ const grabWalkData = async (arrayBuffer) => {
     const [title, ...subtitleArr] = Array.from(dummyDomRoot.querySelectorAll('h2')).map(title => title.textContent);
     const details = Array.from(dummyDomRoot.querySelectorAll('h3')).map((detail, id) => {
         const [name, ...valueArr] = detail.textContent.trim().split(':');
-        return { id: Date.now() + '' + id, name: toTitleCase(name), value: createMobiledocFromString(valueArr.join(':').trim()) }
+        return { id: Date.now() + '' + id, name: toTitleCase(name), value: valueArr.join(':').trim() }
     });
     const content = dummyDomRoot.querySelectorAll('h3:last-of-type ~ *');
     console.log(title, subtitleArr, details, content);
 }
 
-const walk = reactive({ series: '', title: '', subtitle: '', details: [{ id: Date.now(), name: '', value: EMPTY_MOBILEDOC }], portraitMap: false, content: EMPTY_MOBILEDOC });
+const walk = reactive({ title: '', subtitle: '', details: [{ id: Date.now(), name: '', value: '' }], portraitMap: false, content: '' });
 
 export default {
-    components: { Preview, RichTextEditor },
-    data: () => ({ walk, walkSeries, dragover: false }),
+    components: { Preview },
+    data: () => ({ walk, dragover: false }),
     template: `
         <div class="container-xl">
             <div class="page-header d-print-none">
@@ -62,30 +59,23 @@ export default {
                 </div>
             </div>
         </div>
+        <Preview />
         <div class="page-body ${styles}">
             <div class="container-xl">
                 <div class="row row-cards">
                     <div class="col-12">
                         <div class="card" @dragover.prevent="dragover = true" @dragenter.prevent="dragover = true" @dragleave.prevent="dragover = false" @drop.prevent="handleDroppedFile">
+                            <div class="card-header">
+                                <h3 class="card-title">Hello, World!</h3>
+                            </div>
                             <div class="card-body" :class="{ dragover }">
                                 <div class="row">
                                     <div class="col-12">
                                         <div class="mb-3">
-                                            <label class="form-label">Walk Series</label>
-                                            <div class="row g-2 mb-3">
-                                                <div class="col-5">
-                                                    <select class="form-select" v-model="walk.series">
-                                                        <option disabled selected value="">Select a series</option>
-                                                        <option v-for="series in walkSeries" :key="series.slug" :value="series.slug">{{series.title}}</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="mb-3">
                                             <label class="form-label">Title</label>
-                                            <div class="row g-2 mb-3">
+                                            <div class="row g-2 mb-3" >
                                                 <div class="col-4">
-                                                    <input type="text" class="form-control" placeholder="Title" v-model="walk.title" />
+                                                    <input type="text" class="form-control" placeholder="Title" v-model="title" />
                                                 </div>
                                             </div>
                                         </div>
@@ -93,7 +83,7 @@ export default {
                                             <label class="form-label">Subtitle</label>
                                             <div class="row g-2 mb-3" >
                                                 <div class="col-4">
-                                                    <input type="text" class="form-control" placeholder="Subtitle" v-model="walk.subtitle" />
+                                                    <input type="text" class="form-control" placeholder="Subtitle" v-model="subtitle" />
                                                 </div>
                                             </div>
                                         </div>
@@ -104,7 +94,7 @@ export default {
                                                     <input type="text" class="form-control" placeholder="Name" v-model="detail.name" />
                                                 </div>
                                                 <div class="col-7">
-                                                    <RichTextEditor placeholder="Information" v-model="detail.value" />
+                                                    <textarea class="form-control" rows="1" placeholder="Information" v-model="detail.value"></textarea>
                                                 </div>
                                                 <div class="col-1">
                                                     <button class="btn btn-icon" aria-label="Remove row" @click="removeDetail(detail.id)">
@@ -122,8 +112,6 @@ export default {
                                                 </button>
                                             </div>
                                         </div>
-                                        <RichTextEditor placeholder="Write..." v-model="walk.content" />
-                                        <button @click="submitWalk">Upload</button>
                                     </div>
                                 </div>
                             </div>
@@ -131,8 +119,7 @@ export default {
                     </div>
                 </div>
             </div>
-        </div>
-        <Preview :series="walk.series" :title="walk.title" :subtitle="walk.subtitle" :details="walk.details" :content="walk.content" />`,
+        </div>`,
     methods: {
         removeDetail(id) {
             this.walk.details.splice(this.walk.details.findIndex(({ id: needleId }) => needleId === id), 1);
@@ -144,14 +131,6 @@ export default {
                 if (files[0].type !== 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') return;
                 grabWalkData(await files[0].arrayBuffer());
             }
-        },
-        submitWalk() {
-            const { walk } = this;
-            fetch('/api/upload', {
-                method: 'POST',
-                body: JSON.stringify(walk),
-                credentials: 'same-origin'
-            });
         }
     },
 }

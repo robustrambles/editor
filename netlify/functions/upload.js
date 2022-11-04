@@ -1,5 +1,5 @@
 const { createOAuthAppAuth } = require("@octokit/auth-oauth-app");
-const MobiledocDOMRenderer = require('mobiledoc-dom-renderer');
+const { default: MobiledocDOMRenderer } = require('mobiledoc-dom-renderer');
 const SimpleDOM = require('simple-dom');
 const TurndownService = require('turndown');
 const matter = require('gray-matter');

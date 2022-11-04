@@ -27,13 +27,19 @@ exports.handler = async function(event, context) {
     const html = serializer.serializeChildren(rendered.result);
     const turndownService = new TurndownService();
     const markdown = turndownService.turndown(html);
+    const renderedDetails = {};
+    details.forEach(detail => {
+        const detailHtml = serializer.serializeChildren(renderer.render(detail.value).result);
+        const detailValue = turndownService.turndown(detailHtml);
+        renderedDetails[detail.name] = detailValue;
+    });
     return {
         statusCode: 200,
         body: matter.stringify(markdown, {
-            slug,
+            // slug,
             title,
             subtitle,
-            details
+            details: renderedDetails,
             // portraitMap: false
         })
     };

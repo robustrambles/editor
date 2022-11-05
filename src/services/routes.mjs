@@ -9,17 +9,19 @@ export const routes = {
     '/create-series': CreateSeries,
 }
 
+const defaultRoute = '/create-walk';
+
 export const routeMap = new WeakMap();
 for (const route in routes) {
     routeMap.set(routes[route], route);
 }
 
-export const getRoute = (component) => '#' + (routeMap.get(component) || '/');
+export const getRoute = (component) => '#' + (routeMap.get(component) || defaultRoute);
 
-export const activeHash = ref(window.location.hash.slice(1) || '/');
+export const activeHash = ref(window.location.hash.slice(1) || defaultRoute);
 export const activeRoute = ref(routes[activeHash.value]);
 
 window.addEventListener('hashchange', () => {
-    activeHash.value = window.location.hash.slice(1) || '/';
+    activeHash.value = window.location.hash.slice(1) || defaultRoute;
     activeRoute.value = routes[activeHash.value];
 });

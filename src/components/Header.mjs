@@ -4,6 +4,7 @@ import WalkList from "../pages/WalkList.mjs"
 import { activeRoute, activeHash, getRoute } from "../services/routes.mjs"
 
 export default {
+    props: ['showNav'],
     data: () => ({ WalkList: getRoute(WalkList), CreateWalk: getRoute(CreateWalk), CreateSeries: getRoute(CreateSeries) }),
     computed: {
         activeRoute() {
@@ -21,7 +22,7 @@ export default {
             </h1>
         </div>
     </header>
-    <div class="navbar-expand-md">
+    <div class="navbar-expand-md" v-if="showNav !== false">
         <div class="collapse navbar-collapse" id="navbar-menu">
           <div class="navbar navbar-light">
             <div class="container-xl">

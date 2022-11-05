@@ -24,7 +24,7 @@ const styles = css`
 export default {
     props: ['options', 'placeholder', 'modelValue'],
     emits: ['update:modelValue'],
-    data: () => ({ editor: null, toolbar: { bold: false, italic: false } }),
+    data: () => ({ editor: null, toolbar: { bold: false, italic: false, underline: false } }),
     template: `<div class="wrapper ${styles}">
         <div class="editor form-control" ref="editor"></div>
         <div class="mobiledoc-toolbar">
@@ -37,25 +37,9 @@ export default {
                     <!-- Download SVG icon from http://tabler-icons.io/i/italic -->
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><line x1="11" y1="5" x2="17" y2="5"></line><line x1="7" y1="19" x2="13" y2="19"></line><line x1="14" y1="5" x2="10" y2="19"></line></svg>
                 </button>
-                <button class="btn btn-icon" aria-label="Button">
+                <button class="btn btn-icon" :class="{ 'btn-primary': toolbar.underline }" aria-label="Toggle underline formatting" @click="toggleUnderline">
                     <!-- Download SVG icon from http://tabler-icons.io/i/underline -->
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M7 5v5a5 5 0 0 0 10 0v-5"></path><path d="M5 19h14"></path></svg>
-                </button>
-                <button class="btn btn-icon" aria-label="Button">
-                    <!-- Download SVG icon from http://tabler-icons.io/i/copy -->
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path></svg>
-                </button>
-                <button class="btn btn-icon" aria-label="Button">
-                    <!-- Download SVG icon from http://tabler-icons.io/i/scissors -->
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="6" cy="7" r="3"></circle><circle cx="6" cy="17" r="3"></circle><line x1="8.6" y1="8.6" x2="19" y2="19"></line><line x1="8.6" y1="15.4" x2="19" y2="5"></line></svg>
-                </button>
-                <button class="btn btn-icon" aria-label="Button">
-                    <!-- Download SVG icon from http://tabler-icons.io/i/file-plus -->
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M14 3v4a1 1 0 0 0 1 1h4"></path><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"></path><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>
-                </button>
-                <button class="btn btn-icon" aria-label="Button">
-                    <!-- Download SVG icon from http://tabler-icons.io/i/file-minus -->
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M14 3v4a1 1 0 0 0 1 1h4"></path><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"></path><line x1="9" y1="14" x2="15" y2="14"></line></svg>
                 </button>
         </div>
         </div>
@@ -96,6 +80,10 @@ export default {
             this.editor.run(postEditor => postEditor.toggleMarkup('em'))
             this.updateToolbarState();
         },
+        toggleUnderline() {
+            this.editor.run(postEditor => postEditor.toggleMarkup('u'))
+            this.updateToolbarState();
+        },
         updateToolbarState() {
             for (const buttonName in this.toolbar) {
                 this.toolbar[buttonName] = false;
@@ -108,6 +96,9 @@ export default {
                         break;
                     case 'em':
                         this.toolbar.italic = true;
+                        break;
+                    case 'u':
+                        this.toolbar.underline = true;
                         break;
                 }
             });

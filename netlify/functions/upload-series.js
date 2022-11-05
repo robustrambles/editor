@@ -28,7 +28,7 @@ const btoa = (unencodedData) => {
 
 exports.handler = async function(event, context) {
     const DEV = process.env.NETLIFY_DEV === 'true';
-    const { series, details, title, subtitle, content, portraitMap, image } = JSON.parse(event.body);
+    const { seriesTitle, content } = JSON.parse(event.body);
     let client;
     try {
         const cookies = parseCookie(event.headers.cookie);
@@ -48,31 +48,16 @@ exports.handler = async function(event, context) {
     const html = serializer.serializeChildren(rendered.result);
     const turndownService = new TurndownService();
     const markdown = turndownService.turndown(html);
-    const renderedDetails = {};
-    details.forEach(detail => {
-        const detailHtml = serializer.serializeChildren(renderer.render(detail.value).result);
-        const detailValue = turndownService.turndown(detailHtml);
-        renderedDetails[detail.name] = detailValue;
-    });
-    const slug = toSlug(title);
+    const slug = toSlug(seriesTitle);
     const walkFile = matter.stringify(markdown, {
         slug,
-        title,
-        subtitle,
-        details: renderedDetails,
-        portraitMap,
+        seriesTitle
     });
     await client.request('PUT /repos/{owner}/{repo}/contents/{path}', {
         ...commonProps,
-        path: `walks/${series}/${slug}.md`,
+        path: `walks/${slug}/index.md`,
         content: btoa(walkFile),
         message: `Add walk data for "${slug}"`,
-    });
-    await client.request('PUT /repos/{owner}/{repo}/contents/{path}', {
-        ...commonProps,
-        path: `img/maps/${series}/${slug}.jpg`,
-        content: image.data,
-        message: `Add walk map for "${slug}"`,
     });
     return {
         statusCode: 200,

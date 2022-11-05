@@ -1,9 +1,10 @@
+import CreateSeries from "../pages/CreateSeries.mjs";
 import CreateWalk from "../pages/CreateWalk.mjs";
 import WalkList from "../pages/WalkList.mjs"
 import { activeRoute, activeHash, getRoute } from "../services/routes.mjs"
 
 export default {
-    data: () => ({ WalkList: getRoute(WalkList), CreateWalk: getRoute(CreateWalk) }),
+    data: () => ({ WalkList: getRoute(WalkList), CreateWalk: getRoute(CreateWalk), CreateSeries: getRoute(CreateSeries) }),
     computed: {
         activeRoute() {
             return activeRoute.value;
@@ -36,6 +37,13 @@ export default {
                   <a class="nav-link" :href="CreateWalk">
                     <span class="nav-link-title">
                       Add Walk
+                    </span>
+                  </a>
+                </li>
+                <li class="nav-item" :class="{ active: activeHash === CreateSeries }">
+                  <a class="nav-link" :href="CreateSeries">
+                    <span class="nav-link-title">
+                      Add Series
                     </span>
                   </a>
                 </li>

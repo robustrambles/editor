@@ -134,9 +134,12 @@ export default {
                                                 </div>
                                             </div>
                                         </div>
-
-                                        <button @click="submitWalk">Upload</button>
                                     </div>
+                                </div>
+                            </div>
+                            <div class="card-footer text-end">
+                                <div class="d-flex">
+                                    <button class="btn btn-primary ms-auto" @click="submitWalk">Upload walk</button>
                                 </div>
                             </div>
                         </div>

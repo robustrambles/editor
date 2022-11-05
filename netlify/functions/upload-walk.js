@@ -8,7 +8,6 @@ const { Octokit } = require("@octokit/core");
 const commonProps = {
     owner: 'robustrambles',
     repo: 'site',
-    branch: 'test-upload',
 };
 
 const parseCookie = (/** @type {string} */ str) =>

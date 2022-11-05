@@ -312,7 +312,7 @@ const styles = css`
 const render = Renderer({ createElement: h });
 
 export default {
-    props: ['series', 'title', 'subtitle', 'details', 'content'],
+    props: ['series', 'title', 'subtitle', 'details', 'content', 'image'],
     template: `<Teleport to="#teleport-root">
         <div class="${styles}">
             <header>
@@ -347,7 +347,7 @@ export default {
                     <h5>Walk Instructions</h5>
                     <component :is="renderedContent" />
 
-                    <img src="/img/maps/dymchurch-to-didcot-robust-ramble/section-9-return.jpg" loading="lazy" />
+                    <img :src="image" loading="lazy" />
                 </main>
     
                 <footer>

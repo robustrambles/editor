@@ -45,7 +45,7 @@ const grabWalkData = async (arrayBuffer) => {
     console.log(title, subtitleArr, details, content);
 }
 
-const walk = reactive({ series: '', title: '', subtitle: '', details: [{ id: Date.now(), name: '', value: EMPTY_MOBILEDOC }], portraitMap: false, content: EMPTY_MOBILEDOC });
+const walk = reactive({ series: '', title: '', subtitle: '', details: [{ id: Date.now(), name: '', value: EMPTY_MOBILEDOC }], portraitMap: false, content: EMPTY_MOBILEDOC, image: '' });
 
 export default {
     components: { Preview, RichTextEditor },
@@ -122,7 +122,19 @@ export default {
                                                 </button>
                                             </div>
                                         </div>
-                                        <RichTextEditor placeholder="Write..." v-model="walk.content" />
+                                        <div class="mb-3">
+                                            <div class="form-label">Walk description</div>
+                                            <RichTextEditor placeholder="Write..." v-model="walk.content" />
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="form-label">Walk map</div>
+                                            <div class="row g-2 mb-3">
+                                                <div class="col-5">
+                                                    <input type="file" class="form-control" @change="handleMapFile" />
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <button @click="submitWalk">Upload</button>
                                     </div>
                                 </div>
@@ -132,7 +144,12 @@ export default {
                 </div>
             </div>
         </div>
-        <Preview :series="walk.series" :title="walk.title" :subtitle="walk.subtitle" :details="walk.details" :content="walk.content" />`,
+        <Preview :series="walk.series" :title="walk.title" :subtitle="walk.subtitle" :details="walk.details" :content="walk.content" :image="imageSrc" />`,
+    computed: {
+        imageSrc() {
+            return `data:${walk.image.type};base64,${walk.image.data}`;
+        }
+    },
     methods: {
         removeDetail(id) {
             this.walk.details.splice(this.walk.details.findIndex(({ id: needleId }) => needleId === id), 1);
@@ -145,9 +162,28 @@ export default {
                 grabWalkData(await files[0].arrayBuffer());
             }
         },
+        async handleMapFile(event) {
+            const { files: [image] } = event.target;
+            if (image.type.indexOf('image') === -1) return; // TODO: Error user feedback
+            console.log(image);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                this.walk.image = {
+                    type: image.type,
+                    data: reader.result.replace('data:', '').replace(/^.+,/, ''),
+                };
+                const renderedImage = new Image();
+                renderedImage.src = this.imageSrc;
+                renderedImage.onload = () => {
+                    const { width, height } = renderedImage;
+                    this.walk.portraitMap = width < height;
+                };
+            };
+            reader.readAsDataURL(image);
+        },
         submitWalk() {
             const { walk } = this;
-            fetch('/api/upload', {
+            fetch('/api/upload-walk', {
                 method: 'POST',
                 body: JSON.stringify(walk),
                 credentials: 'same-origin'

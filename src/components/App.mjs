@@ -1,6 +1,7 @@
 import Header from "./Header.mjs";
 import Auth from "./Auth.mjs";
 import { activeRoute } from "../services/routes.mjs";
+import Modals from "./Modals.mjs";
 
 const parseCookie = (/** @type {string} */ str) =>
   str
@@ -12,7 +13,7 @@ const parseCookie = (/** @type {string} */ str) =>
     }, {});
 
 export default {
-    components: { Header, Auth },
+    components: { Header, Auth, Modals },
     template: `<div class="theme-light">
         <div class="page">
             <Header :showNav="hasAuth" />
@@ -20,6 +21,7 @@ export default {
                 <component v-if="hasAuth" :is="activeRoute" />
                 <Auth v-else />
             </main>
+            <Modals />
         </div>
     </div>`,
     computed: {

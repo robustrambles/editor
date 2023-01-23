@@ -1,5 +1,7 @@
+import { spawnModal } from "../components/Modals.mjs";
 import Preview from "../components/Preview.mjs";
 import RichTextEditor from "../components/RichTextEditor.mjs";
+import WalkExtractionModal from "../components/WalkExtractionModal.mjs";
 import {css} from "../deps/goober.mjs";
 import mammoth from "../deps/mammoth.mjs";
 import { createMobiledocFromString, EMPTY_MOBILEDOC } from "../deps/mobiledoc.mjs";
@@ -36,6 +38,7 @@ const grabWalkData = async (arrayBuffer) => {
     const dummyDomRoot = document.createElement('div');
     dummyDomRoot.innerHTML = walkHtml;
     console.log(walkHtml);
+    spawnModal(WalkExtractionModal, { html: walkHtml});
     const [title, ...subtitleArr] = Array.from(dummyDomRoot.querySelectorAll('h2')).map(title => title.textContent);
     const details = Array.from(dummyDomRoot.querySelectorAll('h3')).map((detail, id) => {
         const [name, ...valueArr] = detail.textContent.trim().split(':');
@@ -48,8 +51,8 @@ const grabWalkData = async (arrayBuffer) => {
 const walk = reactive({ series: '', title: '', subtitle: '', details: [{ id: Date.now(), name: '', value: EMPTY_MOBILEDOC }], portraitMap: false, content: EMPTY_MOBILEDOC, image: '' });
 
 export default {
-    components: { Preview, RichTextEditor },
-    data: () => ({ walk, walkSeries, dragover: false }),
+    components: { Preview, RichTextEditor, WalkExtractionModal },
+    data: () => ({ walk, walkSeries, dragover: false, showExtractor: false }),
     template: `
         <div class="container-xl">
             <div class="page-header d-print-none">
@@ -147,6 +150,7 @@ export default {
                 </div>
             </div>
         </div>
+        <WalkExtractionModal v-model:show="showExtractor" />
         <Preview :series="walk.series" :title="walk.title" :subtitle="walk.subtitle" :details="walk.details" :content="walk.content" :image="imageSrc" />`,
     computed: {
         imageSrc() {

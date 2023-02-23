@@ -46,11 +46,19 @@ const grabWalkData = async (arrayBuffer) => {
     console.log(title, subtitleArr, details, content);
 }
 
+const getSlug = (str) => str.toLowerCase().replace(/\s/g, '-');
+
 const walk = reactive({ series: '', title: '', subtitle: '', details: [{ id: Date.now(), name: '', value: EMPTY_MOBILEDOC }], portraitMap: false, content: EMPTY_MOBILEDOC, image: '' });
+
+const VIEW_STATES = {
+    READY: 'READY',
+    SUBMITTING: 'SUBMITTING',
+    SUBMITTED: 'SUBMITTED',
+};
 
 export default {
     components: { Preview, RichTextEditor, Modal },
-    data: () => ({ walk, walkSeries, dragover: false, showLegacyAlert: false }),
+    data: () => ({ walk, walkSeries, dragover: false, showLegacyAlert: false, state: VIEW_STATES.READY }),
     template: `
         <div class="container-xl">
             <div class="page-header d-print-none">
@@ -63,7 +71,26 @@ export default {
                 </div>
             </div>
         </div>
-        <div class="page-body ${styles}">
+        <div class="page-body" v-if="state === '${VIEW_STATES.SUBMITTED}'">
+            <div class="container-xl">
+                <div class="row row-cards">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-12 text-center">
+                                        <p>The walk has been created!</p>
+                                        <p>Wait a little while and it will be available at <a :href="getWalkUrl()">{{walkSeries.find(({ slug }) => slug === walk.series).title}} | {{walk.title}}</a></p>
+                                        <button class="btn btn-primary ms-auto" @click="resetAddWalk">Add another walk</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="page-body ${styles}" v-else>
             <div class="container-xl">
                 <div class="row row-cards">
                     <div class="col-12">
@@ -140,7 +167,7 @@ export default {
                             </div>
                             <div class="card-footer text-end">
                                 <div class="d-flex">
-                                    <button class="btn btn-primary ms-auto" @click="submitWalk">Upload walk</button>
+                                    <button class="btn btn-primary ms-auto" :disabled="state === '${VIEW_STATES.SUBMITTING}'" @click="submitWalk">{{state === '${VIEW_STATES.READY}' ? 'Upload walk' : 'Uploading...'}}</button>
                                 </div>
                             </div>
                         </div>
@@ -190,13 +217,26 @@ export default {
             };
             reader.readAsDataURL(image);
         },
-        submitWalk() {
+        async submitWalk() {
             const { walk } = this;
-            fetch('/api/upload-walk', {
+            if (!walk.series || !walk.title) {
+                alert('You MUST select a Walk Series and enter a Walk Title to add a walk');
+                return;
+            }
+            this.state = VIEW_STATES.SUBMITTING;
+            await fetch('/api/upload-walk', {
                 method: 'POST',
                 body: JSON.stringify(walk),
                 credentials: 'same-origin'
             });
+            this.state = VIEW_STATES.SUBMITTED;
+        },
+        getWalkUrl() {
+            const { walk: { series, title }} = this;
+            return `https://robustrambles.co.uk/walks/${getSlug(series)}/${getSlug(title)}`;
+        },
+        resetAddWalk() {
+            window.location.reload();
         }
     },
 }

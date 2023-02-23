@@ -3,11 +3,17 @@ import RichTextEditor from "../components/RichTextEditor.mjs";
 import { EMPTY_MOBILEDOC } from "../deps/mobiledoc.mjs";
 import { reactive } from "../deps/vue.mjs";
 
+const VIEW_STATES = {
+    READY: 'READY',
+    SUBMITTING: 'SUBMITTING',
+    SUBMITTED: 'SUBMITTED',
+};
+
 const series = reactive({ seriesTitle: '', content: EMPTY_MOBILEDOC, });
 
 export default {
     components: { Preview, RichTextEditor },
-    data: () => ({ series }),
+    data: () => ({ series, state: VIEW_STATES.READY }),
     template: `
         <div class="container-xl">
             <div class="page-header d-print-none">
@@ -20,7 +26,26 @@ export default {
                 </div>
             </div>
         </div>
-        <div class="page-body">
+        <div class="page-body" v-if="state === '${VIEW_STATES.SUBMITTED}'">
+            <div class="container-xl">
+                <div class="row row-cards">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-12 text-center">
+                                        <p>The walk series has been created!</p>
+                                        <p>Wait a little while and it will be available to add walks to.</p>
+                                        <button class="btn btn-primary ms-auto" @click="resetAddSeries">Add another series</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="page-body" v-else>
             <div class="container-xl">
                 <div class="row row-cards">
                     <div class="col-12">
@@ -45,7 +70,7 @@ export default {
                             </div>
                             <div class="card-footer text-end">
                                 <div class="d-flex">
-                                    <button class="btn btn-primary ms-auto" @click="submitSeries">Upload series</button>
+                                    <button class="btn btn-primary ms-auto" :disabled="state === '${VIEW_STATES.SUBMITTING}'" @click="submitSeries">{{state === '${VIEW_STATES.READY}' ? 'Upload series' : 'Uploading...'}}</button>
                                 </div>
                             </div>
                         </div>
@@ -54,13 +79,18 @@ export default {
             </div>
         </div>`,
     methods: {
-        submitSeries() {
+        async submitSeries() {
             const { series } = this;
-            fetch('/api/upload-series', {
+            this.state = VIEW_STATES.SUBMITTING;
+            await fetch('/api/upload-series', {
                 method: 'POST',
                 body: JSON.stringify(series),
                 credentials: 'same-origin'
             });
+            this.state = VIEW_STATES.SUBMITTED;
+        },
+        resetAddSeries() {
+            window.location.reload();
         }
     },
 }

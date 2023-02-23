@@ -1,3 +1,4 @@
+import Modal from "../components/Modal.mjs";
 import Preview from "../components/Preview.mjs";
 import RichTextEditor from "../components/RichTextEditor.mjs";
 import {css} from "../deps/goober.mjs";
@@ -48,8 +49,8 @@ const grabWalkData = async (arrayBuffer) => {
 const walk = reactive({ series: '', title: '', subtitle: '', details: [{ id: Date.now(), name: '', value: EMPTY_MOBILEDOC }], portraitMap: false, content: EMPTY_MOBILEDOC, image: '' });
 
 export default {
-    components: { Preview, RichTextEditor },
-    data: () => ({ walk, walkSeries, dragover: false }),
+    components: { Preview, RichTextEditor, Modal },
+    data: () => ({ walk, walkSeries, dragover: false, showLegacyAlert: false }),
     template: `
         <div class="container-xl">
             <div class="page-header d-print-none">
@@ -147,6 +148,10 @@ export default {
                 </div>
             </div>
         </div>
+        <Modal v-model:show="showLegacyAlert">
+            <p>This tool doesn't support the older ".doc" file extension.</p>
+            <p>Use a tool such as <a href="https://cloudconvert.com/doc-to-docx">CloudConvert</a> to convert all files ending in ".doc" to ".docx", which this tool can read.</p>
+        </Modal>
         <Preview :series="walk.series" :title="walk.title" :subtitle="walk.subtitle" :details="walk.details" :content="walk.content" :image="imageSrc" />`,
     computed: {
         imageSrc() {
@@ -161,6 +166,7 @@ export default {
             this.dragover = false;
             if ('dataTransfer' in event) {
                 const { dataTransfer: { files } } = event;
+                if (files[0].type === 'application/msword') return this.showLegacyAlert = true;
                 if (files[0].type !== 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') return;
                 grabWalkData(await files[0].arrayBuffer());
             }

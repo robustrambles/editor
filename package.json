@@ -8,6 +8,7 @@
     "gray-matter": "^4.0.3",
     "mobiledoc-dom-renderer": "^0.7.2",
     "simple-dom": "^1.4.0",
-    "turndown": "^7.1.1"
+    "turndown": "^7.1.1",
+    "word-extractor": "^1.0.4"
   }
 }

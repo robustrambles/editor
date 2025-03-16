@@ -9,7 +9,7 @@ exports.handler = async function(...args) {
     const DEV = process.env.NETLIFY_DEV === 'true';
     return {
         statusCode: 200,
-        body: JSON.parse(args),
+        body: JSON.stringify(args),
     };
     const extractor = new WordExtractor();
     const buffer = await event.arrayBuffer();

@@ -1,17 +1,17 @@
 import CreateSeries from "../pages/CreateSeries.mjs";
 import CreateWalk from "../pages/CreateWalk.mjs";
 import WalkList from "../pages/WalkList.mjs"
-import { activeRoute, activeHash, getRoute } from "../services/routes.mjs"
 
 export default {
     props: ['showNav'],
-    data: () => ({ WalkList: getRoute(WalkList), CreateWalk: getRoute(CreateWalk), CreateSeries: getRoute(CreateSeries) }),
+    inject: ['router'],
     computed: {
-        activeRoute() {
-            return activeRoute.value;
-        },
-        activeHash() {
-            return '#' + activeHash.value;
+        routes() {
+           return {
+                WalkList: this.router.getPath(WalkList),
+                CreateWalk: this.router.getPath(CreateWalk),
+                CreateSeries: this.router.getPath(CreateSeries)
+            };
         }
     },
     template: `
@@ -27,22 +27,22 @@ export default {
           <div class="navbar navbar-light">
             <div class="container-xl">
               <ul class="navbar-nav">
-                <li class="nav-item" :class="{ active: activeHash === WalkList }">
-                  <a class="nav-link" :href="WalkList">
+                <li class="nav-item" :class="{ active: router.state.activeHash === routes.WalkList }">
+                  <a class="nav-link" :href="routes.WalkList">
                     <span class="nav-link-title">
                       Walks
                     </span>
                   </a>
                 </li>
-                <li class="nav-item" :class="{ active: activeHash === CreateWalk }">
-                  <a class="nav-link" :href="CreateWalk">
+                <li class="nav-item" :class="{ active: router.state.activeHash === routes.CreateWalk }">
+                  <a class="nav-link" :href="routes.CreateWalk">
                     <span class="nav-link-title">
                       Add Walk
                     </span>
                   </a>
                 </li>
-                <li class="nav-item" :class="{ active: activeHash === CreateSeries }">
-                  <a class="nav-link" :href="CreateSeries">
+                <li class="nav-item" :class="{ active: router.state.activeHash === routes.CreateSeries }">
+                  <a class="nav-link" :href="routes.CreateSeries">
                     <span class="nav-link-title">
                       Add Series
                     </span>

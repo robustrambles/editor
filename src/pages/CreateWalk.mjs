@@ -57,6 +57,7 @@ const VIEW_STATES = {
 };
 
 export default {
+    name: 'CreateWalk',
     components: { Preview, RichTextEditor, Modal },
     data: () => ({ walk, walkSeries, dragover: false, showLegacyAlert: false, state: VIEW_STATES.READY }),
     template: `

@@ -104,7 +104,7 @@ const styles = css`
   
   header::before {
     content: '';
-    background-image: url('/img/grass.svg');
+    background-image: url('https://robustrambles.co.uk/img/grass.svg');
     background-repeat: repeat no-repeat;
     background-position: bottom;
     background-size: 125%;
@@ -347,7 +347,7 @@ export default {
                     <h5>Walk Instructions</h5>
                     <component :is="renderedContent" />
 
-                    <img :src="image" loading="lazy" />
+                    <img v-if="!image.includes('undefined')" :src="image" loading="lazy" />
                 </main>
     
                 <footer>

@@ -18,7 +18,7 @@ export default {
         <div class="page">
             <Header :showNav="hasAuth" />
             <main class="page-wrapper">
-                <component v-if="hasAuth" :is="router.state.activeRoute" />
+                <component v-if="hasAuth" :is="router.state.activeRoute" v-bind="router.state.routeParams" />
                 <Auth v-else />
             </main>
         </div>

@@ -5,7 +5,7 @@ import {css} from "../deps/goober.mjs";
 import mammoth from "../deps/mammoth.mjs";
 import { createMobiledocFromString, EMPTY_MOBILEDOC } from "../deps/mobiledoc.mjs";
 import { reactive } from "../deps/vue.mjs";
-import { walkSeries } from "../services/walks.mjs";
+import { importedWalks, walkSeries } from "../services/walks.mjs";
 
 const styles = css`
     .card-body > * {
@@ -48,7 +48,12 @@ const grabWalkData = async (arrayBuffer) => {
 
 const getSlug = (str) => str.toLowerCase().replace(/\s/g, '-');
 
-const walk = reactive({ series: '', title: '', subtitle: '', details: [{ id: Date.now(), name: '', value: EMPTY_MOBILEDOC }], portraitMap: false, content: EMPTY_MOBILEDOC, image: '' });
+const createWalk = () => reactive({ series: '', title: '', subtitle: '', details: [{ id: Date.now(), name: '', value: EMPTY_MOBILEDOC }], portraitMap: false, content: EMPTY_MOBILEDOC, image: '' });
+
+const fetchOrCreateWalk = (id) => {
+    if (typeof id !== 'string' || id.length === 0 || !importedWalks.has(id)) return createWalk();
+    return importedWalks.get(id);
+};
 
 const VIEW_STATES = {
     READY: 'READY',
@@ -58,8 +63,9 @@ const VIEW_STATES = {
 
 export default {
     name: 'CreateWalk',
+    props: ['importId'],
     components: { Preview, RichTextEditor, Modal },
-    data: () => ({ walk, walkSeries, dragover: false, showLegacyAlert: false, state: VIEW_STATES.READY }),
+    data: (vm) => ({ walk: fetchOrCreateWalk(vm.importId), walkSeries, dragover: false, showLegacyAlert: false, state: VIEW_STATES.READY }),
     template: `
         <div class="container-xl">
             <div class="page-header d-print-none">
@@ -183,7 +189,7 @@ export default {
         <Preview :series="walk.series" :title="walk.title" :subtitle="walk.subtitle" :details="walk.details" :content="walk.content" :image="imageSrc" />`,
     computed: {
         imageSrc() {
-            return `data:${walk.image.type};base64,${walk.image.data}`;
+            return `data:${this.walk.image.type};base64,${this.walk.image.data}`;
         }
     },
     methods: {

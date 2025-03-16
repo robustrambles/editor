@@ -8,9 +8,9 @@ export default {
     computed: {
         routes() {
            return {
-                WalkList: this.router.getPath(WalkList),
-                CreateWalk: this.router.getPath(CreateWalk),
-                CreateSeries: this.router.getPath(CreateSeries)
+                WalkList: this.router.getSpec(WalkList).spec,
+                CreateWalk: this.router.getSpec(CreateWalk).spec,
+                CreateSeries: this.router.getSpec(CreateSeries).spec
             };
         }
     },
@@ -27,21 +27,21 @@ export default {
           <div class="navbar navbar-light">
             <div class="container-xl">
               <ul class="navbar-nav">
-                <li class="nav-item" :class="{ active: router.state.activeHash === routes.WalkList }">
+                <li class="nav-item" :class="{ active: router.state.activeSpec === routes.WalkList }">
                   <a class="nav-link" :href="routes.WalkList">
                     <span class="nav-link-title">
                       Walks
                     </span>
                   </a>
                 </li>
-                <li class="nav-item" :class="{ active: router.state.activeHash === routes.CreateWalk }">
+                <li class="nav-item" :class="{ active: router.state.activeSpec === routes.CreateWalk }">
                   <a class="nav-link" :href="routes.CreateWalk">
                     <span class="nav-link-title">
                       Add Walk
                     </span>
                   </a>
                 </li>
-                <li class="nav-item" :class="{ active: router.state.activeHash === routes.CreateSeries }">
+                <li class="nav-item" :class="{ active: router.state.activeSpec === routes.CreateSeries }">
                   <a class="nav-link" :href="routes.CreateSeries">
                     <span class="nav-link-title">
                       Add Series

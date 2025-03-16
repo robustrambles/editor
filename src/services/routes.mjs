@@ -2,24 +2,27 @@ import Route from "../deps/route-parser.mjs";
 import { ref, markRaw, reactive, watchEffect, computed } from "../deps/vue.mjs";
 import CreateSeries from "../pages/CreateSeries.mjs";
 import CreateWalk from "../pages/CreateWalk.mjs";
+import UploadWalks from "../pages/UploadWalks.mjs";
 import WalkList from "../pages/WalkList.mjs";
 
-const defaultRoute = '/create-walk';
-const defaultPath = '#' + defaultRoute;
+const defaultPath = '/create-walk';
+const defaultHash = '#' + defaultPath;
 export const routes = {
     '/': WalkList,
-    '/create-walk': CreateWalk,
+    '/upload-walks': UploadWalks,
+    '/create-walk(/:importId)': CreateWalk,
     '/create-series': CreateSeries,
 }
 
 const compiledRoutes = Object.entries(routes).map(([spec, component]) => ({ route: new Route(spec), spec, component }));
 
-const activePath = ref(null);
-const activeHash = computed(() => '#' + activePath.value);
+const activeSpec = ref(null);
 const activeRoute = ref(null);
 const routeParams = ref({});
+const activeHash = computed(() => getPath(activeRoute.value, routeParams.value));
+const activePath = computed(() => activeHash.value.slice(1));
 
-const redirectToDefault = () => window.location.hash = defaultPath;
+const redirectToDefault = () => window.location.hash = defaultHash;
 
 const selectRoute = () => {
     const currentPath = window.location.hash.slice(1);
@@ -27,7 +30,7 @@ const selectRoute = () => {
     let params;
     const matchedRoute = compiledRoutes.find(({ route }) => params = route.match(currentPath));
     if (!matchedRoute) return redirectToDefault();
-    activePath.value = matchedRoute.spec;
+    activeSpec.value = matchedRoute.spec;
     activeRoute.value = markRaw(matchedRoute.component);
     routeParams.value = params;
 };
@@ -36,10 +39,14 @@ selectRoute();
 
 window.addEventListener('hashchange', selectRoute);
 
-const getPath = (component, params = {}) => {
+const getSpec = (component) => {
     const componentName = typeof component === 'string' ? component : component.name;
-    const routeConfiguration = compiledRoutes.find(({ component: routeComponent }) => componentName === routeComponent.name);
-    if (!routeConfiguration) return '#' + defaultRoute;
+    return compiledRoutes.find(({ component: routeComponent }) => componentName === routeComponent.name);
+}
+
+const getPath = (component, params = {}) => {
+    const routeConfiguration = getSpec(component);
+    if (!routeConfiguration) return defaultHash;
     return '#' + routeConfiguration.route.reverse(params);
 }
 
@@ -51,16 +58,18 @@ export default {
     install: (app, options) => {
         const stateObject = reactive({});
         watchEffect(() => {
+            stateObject.activeSpec = activeSpec.value;
             stateObject.activeRoute = activeRoute.value;
             stateObject.activePath = activePath.value;
             stateObject.activeHash = activeHash.value;
             stateObject.routeParams = routeParams.value;
         });
         app.provide('router', {
+            getSpec,
             getPath,
             goTo,
-            defaultRoute,
             defaultPath,
+            defaultHash,
             state: stateObject
         });
     }

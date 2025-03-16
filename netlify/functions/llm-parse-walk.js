@@ -5,14 +5,11 @@ const btoa = (unencodedData) => {
     return buff.toString('base64');
 };
 
-exports.handler = async function(...args) {
+exports.handler = async function(request) {
     const DEV = process.env.NETLIFY_DEV === 'true';
-    return {
-        statusCode: 200,
-        body: JSON.stringify(args),
-    };
+    // create a buffer from the request's body
+    const buffer = Buffer.from(request.body, 'base64');
     const extractor = new WordExtractor();
-    const buffer = await event.arrayBuffer();
     const document = await extractor.extract(buffer);
     
     return {

@@ -1,3 +1,6 @@
+import mammoth from "../deps/mammoth.mjs";
+import TurndownService from "../deps/turndown.mjs";
+
 import Alert from "../components/Alert.mjs";
 import {css} from "../deps/goober.mjs";
 import { getUid } from "../services/helpers.mjs";
@@ -71,10 +74,31 @@ export default {
                     const file = files[fileId];
                     this.uploading = { current: fileId, total: files.length };
                     let content = null;
+                    const arrayBuffer = await file.arrayBuffer();
                     if (file.type === "application/msword") {
-                        // TODO: Send off to function to extract
+                        const response = await fetch('/api/parse-legacy-doc', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/octet-stream',
+                            },
+                            body: arrayBuffer
+                        });
+                    
+                        if (!response.ok) {
+                            this.errors.add({
+                                heading: "Legacy data extraction error",
+                                message: `Error extracting data from legacy Word document "${file.name}".`
+                            });
+                            continue;
+                        }
+                    
+                        const data = await response.json();
+                        content = data.content;
                     } else if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-                        // TODO: Extract in browser using mammoth, benefit here is that we get rich text formatting
+                        const { value: walkHtml } = await mammoth.convertToHtml({ arrayBuffer });
+                        const turndownService = new TurndownService()
+                        content = turndownService.turndown(walkHtml)
+                        console.log(content);
                     } else {
                         this.errors.add({
                             heading: "Unsupported file type",
@@ -82,6 +106,15 @@ export default {
                         });
                         continue;
                     }
+
+                    if (content === null) {
+                        this.errors.add({
+                            heading: "Data extraction error",
+                            message: `"${file.name}" was not correctly parsed.`
+                        });
+                        continue;
+                    }
+
                     try {
                         const extractedWalkData = await getWalkData(content);
                         if (extractedWalkData.length === 0) {
@@ -93,9 +126,11 @@ export default {
                         }
                         extractedWalkData.forEach(walk => {
                             const id = getUid();
-                            this.importedWalks.push(id, { id, ...walk });
+                            this.importedWalks.set(id, { id, ...walk });
                         });
-                    } catch {
+                        console.log(this.importedWalks);
+                    } catch (error) {
+                        console.debug(error);
                         this.errors.add({
                             heading: "Data extraction error",
                             message: `Error extracting data from "${file.name}".`
@@ -146,7 +181,17 @@ export default {
                                 <h3 class="card-title">Ready to upload</h3>
                             </div>
                             <div class="card-body">
-                                <p class="hello-world">Hello, World!</p>
+                                <div class="row row-cards">
+                                    <div class="col-md-6 col-lg-3" v-for="[key, walk] in importedWalks" :key="walk.id">
+                                        <div class="card">
+                                           <div class="card-body">
+                                                <h3 class="card-title">{{walk.title}}</h3>
+                                                <h3 class="card-title card-subtitle">{{walk.subtitle}}</h3>
+                                                <div>{{walk.details.length}} details | {{walk.content.length}} words</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

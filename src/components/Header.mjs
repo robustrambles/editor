@@ -1,5 +1,6 @@
 import CreateSeries from "../pages/CreateSeries.mjs";
 import CreateWalk from "../pages/CreateWalk.mjs";
+import UploadWalks from "../pages/UploadWalks.mjs";
 import WalkList from "../pages/WalkList.mjs"
 
 export default {
@@ -7,11 +8,28 @@ export default {
     inject: ['router'],
     computed: {
         routes() {
-           return {
-                WalkList: this.router.getSpec(WalkList).spec,
-                CreateWalk: this.router.getSpec(CreateWalk).spec,
-                CreateSeries: this.router.getSpec(CreateSeries).spec
-            };
+           return [
+                {
+                  title: "Walks",
+                  spec: this.router.getSpec(WalkList).spec,
+                  path: this.router.getPath(WalkList),
+                },
+                {
+                  title: "Upload Walks",
+                  spec: this.router.getSpec(UploadWalks).spec,
+                  path: this.router.getPath(UploadWalks),
+                },
+                {
+                  title: "Add Walk",
+                  spec: this.router.getSpec(CreateWalk).spec,
+                  path: this.router.getPath(CreateWalk),
+                },
+                {
+                  title: "Add Series",
+                  spec: this.router.getSpec(CreateSeries).spec,
+                  path: this.router.getPath(CreateSeries),
+                }
+            ];
         }
     },
     template: `
@@ -27,26 +45,13 @@ export default {
           <div class="navbar navbar-light">
             <div class="container-xl">
               <ul class="navbar-nav">
-                <li class="nav-item" :class="{ active: router.state.activeSpec === routes.WalkList }">
-                  <a class="nav-link" :href="routes.WalkList">
-                    <span class="nav-link-title">
-                      Walks
-                    </span>
-                  </a>
-                </li>
-                <li class="nav-item" :class="{ active: router.state.activeSpec === routes.CreateWalk }">
-                  <a class="nav-link" :href="routes.CreateWalk">
-                    <span class="nav-link-title">
-                      Add Walk
-                    </span>
-                  </a>
-                </li>
-                <li class="nav-item" :class="{ active: router.state.activeSpec === routes.CreateSeries }">
-                  <a class="nav-link" :href="routes.CreateSeries">
-                    <span class="nav-link-title">
-                      Add Series
-                    </span>
-                  </a>
+                <li v-for="(route, index) in routes" :key="index"
+                class="nav-item" :class="{ active: router.state.activeSpec === route.spec }">
+                    <a class="nav-link" :href="route.path">
+                        <span class="nav-link-title">
+                        {{route.title}}
+                        </span>
+                    </a>
                 </li>
               </ul>
             </div>

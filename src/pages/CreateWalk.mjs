@@ -6,22 +6,13 @@ import mammoth from "../deps/mammoth.mjs";
 import { createMobiledocFromString, EMPTY_MOBILEDOC } from "../deps/mobiledoc.mjs";
 import { reactive } from "../deps/vue.mjs";
 import { importedWalks, walkSeries } from "../services/walks.mjs";
+import { diff_match_patch } from "../deps/diff-match-patch.mjs";
+
+const dmp = new diff_match_patch();
 
 const styles = css`
     .card-body > * {
         transition: 0.125s opacity ease-in-out !important;
-    }
-
-    .card-body.dragover > * {
-        opacity: 0 !important;
-    }
-
-    .card-body.dragover::after {
-        content: '+';
-        font-size: 100px;
-        position: absolute;
-        top: 0;
-        left: calc(50% - 50px);
     }
 `;
 
@@ -51,8 +42,22 @@ const getSlug = (str) => str.toLowerCase().replace(/\s/g, '-');
 const createWalk = () => reactive({ series: '', title: '', subtitle: '', details: [{ id: Date.now(), name: '', value: EMPTY_MOBILEDOC }], portraitMap: false, content: EMPTY_MOBILEDOC, image: '' });
 
 const fetchOrCreateWalk = (id) => {
-    if (typeof id !== 'string' || id.length === 0 || !importedWalks.has(id)) return createWalk();
-    return importedWalks.get(id);
+    const walk = createWalk();
+    if (typeof id !== 'string' || id.length === 0 || !importedWalks.value.has(id)) return walk;
+    const importedWalk = importedWalks.value.get(id);
+    const { series, title, subtitle, details, portraitMap, content, image } = importedWalk.walk;
+    Object.assign(walk, { title, subtitle, content: createMobiledocFromString(content) });
+    walk.details = details.map(({ key, value }) => ({ id: Date.now(), name: key, value: createMobiledocFromString(value) }));
+    if (series) {
+        const truncatedSeries = series.slice(0, dmp.Match_MaxBits);
+        const matchingSeries = walkSeries.map(series => [series, dmp.match_main(series.title, truncatedSeries, 0)]).filter(([_, score]) => score >= 0);
+        if (matchingSeries.length > 0) {
+            const scoredMatches = matchingSeries.map(([series]) => [series, dmp.diff_levenshtein(dmp.diff_main(series.title, truncatedSeries))]);
+            const [[bestMatchSeries]] = scoredMatches.sort(([, a], [, b]) => a - b);
+            walk.series = bestMatchSeries.slug;
+        }
+    }
+    return walk;
 };
 
 const VIEW_STATES = {
@@ -65,7 +70,7 @@ export default {
     name: 'CreateWalk',
     props: ['importId'],
     components: { Preview, RichTextEditor, Modal },
-    data: (vm) => ({ walk: fetchOrCreateWalk(vm.importId), walkSeries, dragover: false, showLegacyAlert: false, state: VIEW_STATES.READY }),
+    data: (vm) => ({ walk: fetchOrCreateWalk(vm.importId), walkSeries, importedWalks, state: VIEW_STATES.READY }),
     template: `
         <div class="container-xl">
             <div class="page-header d-print-none">
@@ -101,8 +106,8 @@ export default {
             <div class="container-xl">
                 <div class="row row-cards">
                     <div class="col-12">
-                        <div class="card" @dragover.prevent="dragover = true" @dragenter.prevent="dragover = true" @dragleave.prevent="dragover = false" @drop.prevent="handleDroppedFile">
-                            <div class="card-body" :class="{ dragover }">
+                        <div class="card">
+                            <div class="card-body">
                                 <div class="row">
                                     <div class="col-12">
                                         <div class="mb-3">
@@ -182,15 +187,62 @@ export default {
                 </div>
             </div>
         </div>
-        <Modal v-model:show="showLegacyAlert">
-            <p>This tool doesn't support the older ".doc" file extension.</p>
-            <p>Use a tool such as <a href="https://cloudconvert.com/doc-to-docx">CloudConvert</a> to convert all files ending in ".doc" to ".docx", which this tool can read.</p>
+        <Modal v-if="importedWalkHasChanges && false" v-model:show="showChangesModal">
+            <div v-for="(changeHtml, i) in importedWalkChanges.content" :key="changeHtml" v-html="changeHtml"></div>
         </Modal>
         <Preview :series="walk.series" :title="walk.title" :subtitle="walk.subtitle" :details="walk.details" :content="walk.content" :image="imageSrc" />`,
     computed: {
+        importedWalk() {
+            if (!this.importId || !this.importedWalks.has(this.importId)) return null;
+            const importedWalk = this.importedWalks.get(this.importId);
+            return importedWalk;
+        },
+        importedWalkHasChanges() {
+            if (!this.importedWalk) return false;
+            const { changes } = this.importedWalk;
+            console.log(changes);
+            return Object.keys(changes).length > 0;
+        },
+        importedWalkChanges() {
+            if (!this.importedWalkHasChanges) return null;
+            const { walk, changes } = this.importedWalk;
+            const diffHtmls = {};
+            Object.keys(changes).forEach(key => {
+                const content = walk[key];
+                diffHtmls[key] = changes[key].map(patch => {
+                    console.log(patch);
+                    const patchedContent = dmp.patch_apply([patch], content);
+                    console.log(patchedContent);
+                    const diff = dmp.diff_main(patchedContent[0], content);
+                    console.log(diff);
+                    const excerptEdges = 200;
+                    if (diff[0][0] === 0) {
+                        const diffStart = diff[0][1].slice(excerptEdges * -1).trim();
+                        diff[0][1] = diffStart.length !== diff[0][1].length ? '...' + diffStart : diffStart;
+                    }
+                    if (diff.at(-1)[0] === 0) {
+                        const diffEnd = diff.at(-1)[1].slice(0, excerptEdges);
+                        diff.at(-1)[1] = diffEnd.length !== diff.at(-1)[1].length ? diffEnd + '...' : diffEnd;
+                    }
+                    return dmp.diff_prettyHtml(diff);
+                });
+            });
+            console.log(diffHtmls);
+            return diffHtmls;
+        },
         imageSrc() {
             return `data:${this.walk.image.type};base64,${this.walk.image.data}`;
         }
+    },
+    watch: {
+        importedWalkHasChanges: {
+            handler(newValue, oldValue) {
+                if (newValue === oldValue) return;
+                this.importedWalkChanges;
+                this.showChangesModal = true;
+            },
+            immediate: true,
+        },
     },
     methods: {
         removeDetail(id) {

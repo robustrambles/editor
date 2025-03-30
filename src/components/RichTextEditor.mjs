@@ -63,7 +63,6 @@ export default {
         });
         this.editor = new Editor(mergedOptions);
         this.editor.postDidChange(() => this.$emit('update:modelValue', this.editor.serialize()));
-        console.log(this.editor);
         const pacedToolbarStateHandler = pace(this.updateToolbarState.bind(this));
         this.editor.cursorDidChange(() => pacedToolbarStateHandler());
         this.editor.render(this.$refs.editor);

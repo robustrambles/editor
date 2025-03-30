@@ -1,5 +1,9 @@
 import mammoth from "../deps/mammoth.mjs";
 import TurndownService from "../deps/turndown.mjs";
+import { diff_match_patch, DIFF_EQUAL } from "../deps/diff-match-patch.mjs";
+import { fuzzySearch } from "../deps/fuzzyhighlight.mjs";
+
+const dmp = new diff_match_patch();
 
 import Alert from "../components/Alert.mjs";
 import {css} from "../deps/goober.mjs";
@@ -40,31 +44,74 @@ const styles = {
     `
 };
 
-async function extractWalkData(file) {
-    // Read the file as ArrayBuffer
-    const arrayBuffer = await file.arrayBuffer();
+const neutralise_non_alphanumeric_diff = (diff) => diff[1].replace(/[^a-zA-Z0-9]/g, "").length === 0 ? { 0: DIFF_EQUAL, 1: diff[1] } : diff;
 
-    // POST the ArrayBuffer to the API
-    const response = await fetch('/api/llm-parse-walk', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/octet-stream',
-        },
-        body: arrayBuffer
+const determine_changes = (walk, originalContent) => {
+    const originalDescriptionStartSearch = fuzzySearch(walk.content.slice(0, 100), originalContent);
+    const originalDescriptionEndSearch = fuzzySearch(walk.content.slice(-100), originalContent);
+    // const originalDescription = originalContent.slice(originalDescriptionStartSearch.indexes[0].start, originalDescriptionEndSearch.indexes[0].end);
+    const preContent = walk.title + walk.subtitle + walk.details.map(detail => `${detail.key}: ${detail.value}`).join("");
+    const preContentPrefix = preContent.length;
+    const roughContent = originalContent.slice(Math.max(originalDescriptionStartSearch.indexes[0].start - (preContentPrefix * 1.3), 0), originalDescriptionEndSearch.indexes.at(-1).end);
+    const actualContentStart = fuzzySearch(walk.title, roughContent);
+    const originalWalk = roughContent.slice(actualContentStart.indexes[0].start);
+
+    // Now we have the walk content, we can find and diff each part
+    const originalTitleSearch = fuzzySearch(walk.title, originalWalk);
+    const originalTitle = originalWalk.slice(originalTitleSearch.indexes[0].start, originalTitleSearch.indexes.at(-1).end);
+    const originalSubtitleSearch = fuzzySearch(walk.subtitle, originalWalk);
+    const originalSubtitle = originalWalk.slice(originalSubtitleSearch.indexes[0].start, originalSubtitleSearch.indexes.at(-1).end);
+    const originalDetails = walk.details.map(detail => {
+        const search = fuzzySearch(detail.value, originalWalk);
+        return originalWalk.slice(search.indexes[0].start, search.indexes.at(-1).end);
     });
+    const originalDescriptionSearch = fuzzySearch(walk.content.slice(0, 200), originalWalk);
+    // const originalDescription = originalWalk.slice(originalDescriptionSearch.indexes[0].start).replaceAll("the", "teh");
+    const originalDescription = originalWalk.slice(originalDescriptionSearch.indexes[0].start);
 
-    if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+    // And then diff each part
+    const titleDiffs = dmp.diff_main(walk.title, originalTitle).map(neutralise_non_alphanumeric_diff);
+    const subtitleDiffs = dmp.diff_main(walk.subtitle, originalSubtitle).map(neutralise_non_alphanumeric_diff);
+    const detailDiffs = walk.details.map((detail, index) => dmp.diff_main(detail.value, originalDetails[index]).map(neutralise_non_alphanumeric_diff));
+    const contentDiffs = dmp.diff_main(walk.content, originalDescription).map(neutralise_non_alphanumeric_diff);
+    [titleDiffs, subtitleDiffs, ...detailDiffs, contentDiffs].forEach(diff => dmp.diff_cleanupSemantic(diff));
+
+    // And then produce patches for each part
+    const titlePatch = dmp.patch_make(titleDiffs);
+    const subtitlePatch = dmp.patch_make(subtitleDiffs);
+    const detailPatches = walk.details.map((detail, index) => dmp.patch_make(detailDiffs[index]));
+    const contentPatch = dmp.patch_make(contentDiffs);
+
+    const changes = {};
+
+    if (titlePatch.length > 0) {
+        changes.title = titlePatch;
     }
 
-    // Parse and return the response
-    return response.json();
+    if (subtitlePatch.length > 0) {
+        changes.subtitle = subtitlePatch;
+    }
+
+    if (detailPatches.some(patch => patch.length > 0)) {
+        changes.details = detailPatches;
+    }
+
+    if (contentPatch.length > 0) {
+        changes.content = contentPatch;
+        console.log({ before: walk.content, patched: dmp.patch_apply(contentPatch, walk.content) });
+    }
+    
+    return changes;
 }
 
 export default {
     name: 'UploadWalks',
+    inject: ['router'],
     components: { Alert },
     data: () => ({ dragover: false, uploading: null, importedWalks, errors: new Set() }),
+    mounted() {
+        this.importedWalks.forEach(({ walk, originalContent }) => console.log(determine_changes(walk, originalContent)));
+    },
     methods: {
         async handleDroppedFile(event) {
             this.dragover = false;
@@ -126,7 +173,7 @@ export default {
                         }
                         extractedWalkData.forEach(walk => {
                             const id = getUid();
-                            this.importedWalks.set(id, { id, ...walk });
+                            this.importedWalks.set(id, { id, walk, originalContent: content, changes: determine_changes(walk, content) });
                         });
                         console.log(this.importedWalks);
                     } catch (error) {
@@ -182,10 +229,10 @@ export default {
                             </div>
                             <div class="card-body">
                                 <div class="row row-cards">
-                                    <div class="col-md-6 col-lg-3" v-for="[key, walk] in importedWalks" :key="walk.id">
+                                    <div class="col-md-6 col-lg-3" v-for="[key, { id, walk }] in importedWalks" :key="walk.id">
                                         <div class="card">
                                            <div class="card-body">
-                                                <h3 class="card-title">{{walk.title}}</h3>
+                                                <h3 class="card-title"><a :href="router.getPath('CreateWalk', { importId: id })">{{walk.title}}</a></h3>
                                                 <h3 class="card-title card-subtitle">{{walk.subtitle}}</h3>
                                                 <div>{{walk.details.length}} details | {{walk.content.length}} words</div>
                                             </div>

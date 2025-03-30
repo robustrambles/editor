@@ -15,5 +15,5 @@ export const createMobiledocFromString = (str) => ({
     markups: [],
     atoms: [],
     cards: [],
-    sections: [[1, 'p', [[ 0, [], 0, str ]]]],
+    sections: str.split('\n').filter(line => line.trim().length > 0).map((line) => [1, 'p', [[ 0, [], 0, line ]]]),
 });

@@ -139,11 +139,17 @@ export const getWalkData = async (content) => {
                         items: {
                             type: "object",
                             properties: {
+                                series: {
+                                    type: "string",
+                                    description: 'The overarching ramble name, often formatted as "{place} to {place}", sometimes suffixed with "Robust Ramble". May be left blank.'
+                                },
                                 title: {
                                     type: "string",
+                                    description: 'The name of this specific part of the ramble. Often simply formatted as "Section x (out)" or "Section x (return)", but could vary.'
                                 },
                                 subtitle: {
                                     type: "string",
+                                    description: 'A brief naming of the start and destination of this specific part of the ramble, pfen formatted as "{place} to {place}", but will always follow the title rather than proceed it.'
                                 },
                                 details: {
                                     type: "array",
@@ -157,9 +163,12 @@ export const getWalkData = async (content) => {
                                         additionalProperties: false
                                     }
                                 },
-                                content: { type: "string" }
+                                content: {
+                                    type: "string",
+                                    description: 'The main content of the walk. Retain all formatting and line breaks.'
+                                }
                             },
-                            required: ["title", "subtitle", "details", "content"],
+                            required: ["series", "title", "subtitle", "details", "content"],
                             additionalProperties: false
                         },
                         additionalProperties: false
@@ -169,11 +178,18 @@ export const getWalkData = async (content) => {
         }],
         tool_choice: "required"           
     });
+    console.debug(response);
     const fakeFunctionCall = response.output.find(({ type, name }) => type === "function_call" && name === fakeFunctionName);
     if (!fakeFunctionCall) {
         throw new Error("Structured output not found");
     }
-    const { walks } = JSON.parse(fakeFunctionCall.arguments);
+    let walks = [];
+    try {
+        ({ walks } = JSON.parse(fakeFunctionCall.arguments));
+    } catch (error) {
+        console.debug(error, { fakeFunctionCall, response})
+        throw error;
+    }
     return walks;
 }
     

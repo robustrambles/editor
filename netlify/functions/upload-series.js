@@ -12,8 +12,15 @@ const { btoa } = require('./lib/btoa');
 exports.handler = async function(event, context) {
     const DEV = process.env.NETLIFY_DEV === 'true';
     const { seriesTitle, content } = JSON.parse(event.body);
-    const client = await getOctokitClient(event);
-    await checkAuthentication(client);
+    try {
+        const client = await getOctokitClient(event);
+        await checkAuthentication(client);
+    } catch (error) {
+        return {
+            statusCode: 401,
+            body: JSON.stringify(DEV ? { error: error.toString() } : { error: true }),
+        };
+    }
     const renderer = new MobiledocDOMRenderer({
         dom: new SimpleDOM.Document()
     });

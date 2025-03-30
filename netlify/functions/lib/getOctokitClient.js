@@ -11,10 +11,11 @@ const parseCookie = (/** @type {string} */ str) =>
 
 exports.getOctokitClient = async function(request) {
     const DEV = process.env.NETLIFY_DEV === 'true';
+    let client;
     try {
         const cookies = parseCookie(request.headers.cookie);
         const token = cookies[DEV ? 'token' : '__Host-github-token'];
-        const client = new Octokit({ auth: token });
+        client = new Octokit({ auth: token });
     } catch (error) {
         throw Error('Error occurred while authenticating Octokit client: ' + error);
     }

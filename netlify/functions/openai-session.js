@@ -2,8 +2,16 @@ const { getOctokitClient } = require('./lib/getOctokitClient');
 const { checkAuthentication } = require('./lib/checkAuthentication');
 
 exports.handler = async function(request) {
-    const client = await getOctokitClient(request);
-    await checkAuthentication(client);
+    const DEV = process.env.NETLIFY_DEV === 'true';
+    try {
+        const client = await getOctokitClient(request);
+        await checkAuthentication(client);
+    } catch (error) {
+        return {
+            statusCode: 401,
+            body: JSON.stringify(DEV ? { error: error.toString() } : { error: true }),
+        };
+    }
     const r = await fetch("https://api.openai.com/v1/realtime/sessions", {
         method: "POST",
         headers: {

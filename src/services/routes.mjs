@@ -1,27 +1,76 @@
-import { ref } from "../deps/vue.mjs";
+import Route from "../deps/route-parser.mjs";
+import { ref, markRaw, reactive, watchEffect, computed } from "../deps/vue.mjs";
 import CreateSeries from "../pages/CreateSeries.mjs";
 import CreateWalk from "../pages/CreateWalk.mjs";
+import UploadWalks from "../pages/UploadWalks.mjs";
 import WalkList from "../pages/WalkList.mjs";
 
+const defaultPath = '/create-walk';
+const defaultHash = '#' + defaultPath;
 export const routes = {
     '/': WalkList,
-    '/create-walk': CreateWalk,
+    '/upload-walks': UploadWalks,
+    '/create-walk(/:importId)': CreateWalk,
     '/create-series': CreateSeries,
 }
 
-const defaultRoute = '/create-walk';
+const compiledRoutes = Object.entries(routes).map(([spec, component]) => ({ route: new Route(spec), spec, component }));
 
-export const routeMap = new WeakMap();
-for (const route in routes) {
-    routeMap.set(routes[route], route);
+const activeSpec = ref(null);
+const activeRoute = ref(null);
+const routeParams = ref({});
+const activeHash = computed(() => getPath(activeRoute.value, routeParams.value));
+const activePath = computed(() => activeHash.value.slice(1));
+
+const redirectToDefault = () => window.location.hash = defaultHash;
+
+const selectRoute = () => {
+    const currentPath = window.location.hash.slice(1);
+    if (currentPath === '') return redirectToDefault();
+    let params;
+    const matchedRoute = compiledRoutes.find(({ route }) => params = route.match(currentPath));
+    if (!matchedRoute) return redirectToDefault();
+    activeSpec.value = matchedRoute.spec;
+    activeRoute.value = markRaw(matchedRoute.component);
+    routeParams.value = params;
+};
+
+selectRoute();
+
+window.addEventListener('hashchange', selectRoute);
+
+const getSpec = (component) => {
+    const componentName = typeof component === 'string' ? component : component.name;
+    return compiledRoutes.find(({ component: routeComponent }) => componentName === routeComponent.name);
 }
 
-export const getRoute = (component) => '#' + (routeMap.get(component) || defaultRoute);
+const getPath = (component, params = {}) => {
+    const routeConfiguration = getSpec(component);
+    if (!routeConfiguration) return defaultHash;
+    return '#' + routeConfiguration.route.reverse(params);
+}
 
-export const activeHash = ref(window.location.hash.slice(1) || defaultRoute);
-export const activeRoute = ref(routes[activeHash.value]);
+const goTo = (component, params = {}) => {
+    window.location.hash = getPath(component, params);
+}
 
-window.addEventListener('hashchange', () => {
-    activeHash.value = window.location.hash.slice(1) || defaultRoute;
-    activeRoute.value = routes[activeHash.value];
-});
+export default {
+    install: (app, options) => {
+        const stateObject = reactive({});
+        watchEffect(() => {
+            stateObject.activeSpec = activeSpec.value;
+            stateObject.activeRoute = activeRoute.value;
+            stateObject.activePath = activePath.value;
+            stateObject.activeHash = activeHash.value;
+            stateObject.routeParams = routeParams.value;
+        });
+        app.provide('router', {
+            getSpec,
+            getPath,
+            goTo,
+            defaultPath,
+            defaultHash,
+            state: stateObject
+        });
+    }
+}

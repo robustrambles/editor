@@ -12,6 +12,7 @@ const VIEW_STATES = {
 const series = reactive({ seriesTitle: '', content: EMPTY_MOBILEDOC, });
 
 export default {
+    name: 'CreateSeries',
     components: { Preview, RichTextEditor },
     data: () => ({ series, state: VIEW_STATES.READY }),
     template: `

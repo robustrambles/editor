@@ -1,6 +1,5 @@
 import Header from "./Header.mjs";
 import Auth from "./Auth.mjs";
-import { activeRoute } from "../services/routes.mjs";
 
 const parseCookie = (/** @type {string} */ str) =>
   str
@@ -12,12 +11,14 @@ const parseCookie = (/** @type {string} */ str) =>
     }, {});
 
 export default {
+    name: 'App',
+    inject: ['router'],
     components: { Header, Auth },
     template: `<div class="theme-light">
         <div class="page">
             <Header :showNav="hasAuth" />
             <main class="page-wrapper">
-                <component v-if="hasAuth" :is="activeRoute" />
+                <component v-if="hasAuth" :is="router.state.activeRoute" v-bind="router.state.routeParams" />
                 <Auth v-else />
             </main>
         </div>
@@ -31,8 +32,5 @@ export default {
                 return false;
             }
         },
-        activeRoute() {
-            return activeRoute.value;
-        }
     },
 }

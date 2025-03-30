@@ -3,41 +3,22 @@ const { default: MobiledocDOMRenderer } = require('mobiledoc-dom-renderer');
 const SimpleDOM = require('simple-dom');
 const TurndownService = require('turndown');
 const matter = require('gray-matter');
-const { Octokit } = require("@octokit/core");
-
-const commonProps = {
-    owner: 'robustrambles',
-    repo: 'site',
-};
-
-const parseCookie = (/** @type {string} */ str) =>
-  str
-    .split(';')
-    .map(v => v.split('='))
-    .reduce((/** @type {{ [key: string]: string }} */acc, v) => {
-      acc[decodeURIComponent(v[0].trim())] = decodeURIComponent(v[1].trim());
-      return acc;
-    }, {});
-
-const toSlug = (str) => str.replace(/\s+/g, ' ').split(' ').join('-').toLowerCase();
-
-const btoa = (unencodedData) => {
-    const buff = Buffer.from(unencodedData, 'utf-8');
-    return buff.toString('base64');
-};
+const { getOctokitClient } = require('./lib/getOctokitClient');
+const { checkAuthentication } = require('./lib/checkAuthentication');
+const { commonProps } = require('./lib/constants');
+const { toSlug } = require('./lib/toSlug');
+const { btoa } = require('./lib/btoa');
 
 exports.handler = async function(event, context) {
     const DEV = process.env.NETLIFY_DEV === 'true';
     const { seriesTitle, content } = JSON.parse(event.body);
-    let client;
     try {
-        const cookies = parseCookie(event.headers.cookie);
-        const token = cookies[DEV ? 'token' : '__Host-github-token'];
-        client = new Octokit({ auth: token });
+        const client = await getOctokitClient(event);
+        await checkAuthentication(client);
     } catch (error) {
         return {
             statusCode: 401,
-            body: DEV ? error.toString() : '',
+            body: JSON.stringify(DEV ? { error: error.toString() } : { error: true }),
         };
     }
     const renderer = new MobiledocDOMRenderer({
